@@ -521,15 +521,15 @@ select{
   font-size:12px;font-weight:900;color:#fff;
   transition:background .15s,border-color .15s;flex-shrink:0}
 /* 완료 상태 */
-.cbtn.is-done{border-color:var(--blue);color:var(--blue)}
-.cbtn.is-done .cbtn__box{background:var(--blue);border-color:var(--blue)}
+.cbtn.is-done{border-color:#16a34a;color:#16a34a}
+.cbtn.is-done .cbtn__box{background:#16a34a;border-color:#16a34a}
 /* 숨김 */
 .cbtn input{display:none}
 /* status badge (목록용) */
 .status-badge{
   font-size:10px;font-weight:700;padding:2px 8px;
   border-radius:20px;white-space:nowrap}
-.status-badge.done{background:var(--blue-xl);color:var(--blue)}
+.status-badge.done{background:#f0fdf4;color:#16a34a}
 .status-badge.todo{display:none}
 
 /* ═══════════════════════ LESSON TAB ═══════════════════════════ */
@@ -565,6 +565,56 @@ select{
   white-space:pre-wrap;word-break:break-word;
   background:#fff;border-radius:var(--r-sm);
   padding:9px 12px;border:1px solid var(--border)}
+
+/* ══════════════ WEEK PICKER ══════════════ */
+.wp-wrap{position:relative;display:inline-block;width:100%}
+.wp-input{
+  width:100%;padding:11px 13px;font-size:14px;font-family:inherit;
+  border:1.5px solid var(--border);border-radius:var(--r-sm);
+  background:#fff;color:var(--text);cursor:pointer;
+  outline:none;text-align:left;transition:border-color .15s;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wp-input.open{border-color:var(--blue);box-shadow:0 0 0 3px rgba(22,163,74,.12)}
+.wp-dropdown{
+  display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:9999;
+  background:#fff;border:1.5px solid var(--border);border-radius:var(--r);
+  box-shadow:0 8px 24px rgba(20,83,45,.18);padding:14px;min-width:290px}
+.wp-dropdown.open{display:block}
+.wp-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.wp-nav-btn{
+  background:none;border:1px solid var(--border);cursor:pointer;
+  padding:4px 12px;font-size:16px;color:var(--text2);
+  border-radius:var(--r-sm);line-height:1.2;transition:background .12s}
+.wp-nav-btn:hover{background:var(--gray1)}
+.wp-nav-title{font-size:14px;font-weight:700;color:var(--navy)}
+.wp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.wp-dow{text-align:center;font-size:10px;font-weight:700;
+  color:var(--text3);padding:5px 0 4px;letter-spacing:.02em}
+.wp-dow.wp-sun{color:#d03}
+.wp-day{
+  text-align:center;padding:5px 1px;
+  cursor:pointer;position:relative;user-select:none;
+  transition:background .08s}
+.wp-day-num{
+  display:inline-block;width:28px;height:28px;line-height:28px;
+  font-size:13px;border-radius:50%;color:var(--text)}
+.wp-day.other .wp-day-num{color:var(--gray3)}
+.wp-day.today .wp-day-num{font-weight:700;border:1.5px solid var(--blue);color:var(--blue)}
+/* 주간 하이라이트 */
+.wp-day.in-week{background:var(--blue-xl)}
+.wp-day.in-week .wp-day-num{color:var(--blue)}
+.wp-day.week-start{background:var(--blue-xl);border-radius:6px 0 0 6px}
+.wp-day.week-start .wp-day-num{background:var(--blue);color:#fff;font-weight:700}
+.wp-day.week-end{background:var(--blue-xl);border-radius:0 6px 6px 0}
+.wp-day.week-end .wp-day-num{background:var(--blue);color:#fff;font-weight:700}
+/* hover는 살짝 연하게 */
+.wp-day.hovering.in-week{background:var(--blue-l)}
+.wp-day.hovering.week-start,.wp-day.hovering.week-end{background:var(--blue-l)}
+.wp-day.hovering.week-start .wp-day-num,
+.wp-day.hovering.week-end .wp-day-num{background:var(--blue-m)}
+.wp-sun .wp-day-num,.wp-day-num.wp-sun{color:#d03}
+.wp-day.week-start .wp-day-num.wp-sun,
+.wp-day.week-end .wp-day-num.wp-sun{color:#fff}
 </style>
 </head>
 <body>
@@ -589,8 +639,12 @@ select{
         <input type="text" id="class-name" placeholder="예: 사랑반">
       </div>
       <div>
-        <span class="slabel">주간 (해당 주 일요일)</span>
-        <input type="date" id="week-start" onchange="updateWeekLabel('week-start','week-label')">
+        <span class="slabel">주간 선택</span>
+        <div class="wp-wrap" id="wp-write">
+          <button type="button" class="wp-input" id="wp-write-btn" onclick="wpToggle('wp-write')">주간을 선택하세요</button>
+          <div class="wp-dropdown" id="wp-write-drop"></div>
+        </div>
+        <input type="hidden" id="week-start">
         <div id="week-label" class="week-hint"></div>
       </div>
     </div>
@@ -631,7 +685,11 @@ select{
       <div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:flex-end">
         <div>
           <span class="slabel" style="margin-top:0">주간 선택 (일요일)</span>
-          <input type="date" id="chief-week" onchange="updateWeekLabel('chief-week','chief-week-hint')">
+          <div class="wp-wrap" id="wp-chief">
+            <button type="button" class="wp-input" id="wp-chief-btn" onclick="wpToggle('wp-chief')">주간을 선택하세요</button>
+            <div class="wp-dropdown" id="wp-chief-drop"></div>
+          </div>
+          <input type="hidden" id="chief-week">
         </div>
         <button class="btn primary" onclick="runTeacherReport()">조회</button>
         <button class="btn" onclick="printTeacherReport()">인쇄</button>
@@ -928,22 +986,34 @@ async function jnlDel(id){
 }
 
 /* ════════════════════════ DATE ════════════════════════════════ */
+// 날짜 → YYYY-MM-DD (로컬 기준, toISOString은 UTC라 한국에서 하루 밀림)
+function localDateStr(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+// s(YYYY-MM-DD) → 해당 주 월요일 반환
 function toMonday(s){
-  const d=new Date(s),day=d.getDay();
+  const d=new Date(s+'T00:00:00'),day=d.getDay();
   const diff=day===0?-6:1-day;
   d.setDate(d.getDate()+diff);
-  return d.toISOString().split('T')[0];
+  return localDateStr(d);
 }
-function weekLabel(s){
-  // s는 저장된 날짜(선택한 날짜의 월요일)
-  // 월요일로 보정 후 +6일 = 일요일
-  const a=new Date(s+'T00:00:00');
-  const aDay=a.getDay();
-  const diff=aDay===0?-6:1-aDay;
-  a.setDate(a.getDate()+diff);          // 월요일로 스냅
-  const b=new Date(a); b.setDate(a.getDate()+6); // 일요일
+// s(월요일 날짜) → 일요일 날짜 반환
+function toSunday(s){
+  const d=new Date(s+'T00:00:00');
+  d.setDate(d.getDate()+6);
+  return localDateStr(d);
+}
+// weekStart(월요일) 기준 "6/16(월) ~ 6/22(일)" 형태 레이블
+function weekLabel(weekStart){
+  const mon=new Date(weekStart+'T00:00:00');
+  const sun=new Date(weekStart+'T00:00:00'); sun.setDate(sun.getDate()+6);
   const f=d=>`${d.getMonth()+1}/${d.getDate()}`;
-  return `${a.getFullYear()}년 ${f(a)}(월) ~ ${f(b)}(일)`;
+  return `${mon.getFullYear()}년 ${f(mon)}(월) ~ ${f(sun)}(일)`;
+}
+// 제목용: weekStart(월요일) → 해당 주 일요일 "6/22" 형태
+function weekTitleDate(weekStart){
+  const sun=new Date(weekStart+'T00:00:00'); sun.setDate(sun.getDate()+6);
+  return `${sun.getFullYear()}.${String(sun.getMonth()+1).padStart(2,'0')}.${String(sun.getDate()).padStart(2,'0')}`;
 }
 function updateWeekLabel(iId,hId){
   const el=document.getElementById(iId); if(!el.value) return;
@@ -951,6 +1021,225 @@ function updateWeekLabel(iId,hId){
   document.getElementById(hId).textContent=weekLabel(el.value);
 }
 function snapSunday(iId,hId){ updateWeekLabel(iId,hId); }
+
+/* ════════════════════════ WEEK PICKER ════════════════════════ */
+// 달력: 일-토 구조 / 선택 단위: 월(Mon)~일(Sun)
+// ds를 받아 해당 주 월요일 반환 (toMonday와 동일, 명시적으로 사용)
+function wpGetMon(ds){
+  const d=new Date(ds+'T00:00:00'), day=d.getDay();
+  const diff = day===0 ? -6 : 1-day;
+  d.setDate(d.getDate()+diff);
+  return wpStr(d);
+}
+function wpGetSun(monStr){
+  const d=new Date(monStr+'T00:00:00');
+  d.setDate(d.getDate()+6);
+  return wpStr(d);
+}
+// ds 문자열을 Date로 (타임존 안전하게)
+function wpDate(s){ return new Date(s+'T00:00:00'); }
+// Date → YYYY-MM-DD (로컬 날짜 기준, toISOString은 UTC라 한국에서 하루 밀림)
+function wpStr(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+const _wpState={};
+
+function wpInit(wrapId, initialMonday){
+  // initialMonday가 없으면 오늘이 속한 주 월요일
+  const base = initialMonday || wpGetMon(wpStr(new Date()));
+  const d = wpDate(base);
+  _wpState[wrapId]={
+    year: d.getFullYear(),
+    month: d.getMonth(),
+    selectedMon: initialMonday||null,
+    hoverMon: null
+  };
+  if(document.getElementById(wrapId+'-drop'))
+    wpRender(wrapId);
+}
+
+function wpToggle(wrapId){
+  const drop=document.getElementById(wrapId+'-drop');
+  const btn=document.getElementById(wrapId+'-btn');
+  const isOpen=drop.classList.contains('open');
+  document.querySelectorAll('.wp-dropdown.open').forEach(el=>el.classList.remove('open'));
+  document.querySelectorAll('.wp-input.open').forEach(el=>el.classList.remove('open'));
+  if(!isOpen){
+    if(!_wpState[wrapId]) wpInit(wrapId);
+    drop.classList.add('open');
+    btn.classList.add('open');
+    wpRender(wrapId);
+  }
+}
+
+function wpClose(wrapId){
+  document.getElementById(wrapId+'-drop')?.classList.remove('open');
+  document.getElementById(wrapId+'-btn')?.classList.remove('open');
+}
+
+function wpNav(wrapId, delta){
+  const st=_wpState[wrapId];
+  st.month+=delta;
+  if(st.month>11){st.month=0;st.year++;}
+  if(st.month<0){st.month=11;st.year--;}
+  st.hoverMon=null;
+  wpRender(wrapId);
+}
+
+function wpRender(wrapId){
+  const st=_wpState[wrapId];
+  const drop=document.getElementById(wrapId+'-drop');
+  if(!drop) return;
+
+  // 오늘
+  const todayStr=wpStr(new Date());
+
+  // 확정 선택된 주만 렌더에 반영 (hover는 CSS 클래스 직접 조작)
+  const selMon=st.selectedMon;
+  const selSun=selMon?wpGetSun(selMon):null;
+
+  // 달력 시작: 이 달 1일이 속한 주의 일요일
+  // 달력은 일(0)-토(6) 구조
+  const firstOfMonth = new Date(st.year, st.month, 1);
+  const firstDow = firstOfMonth.getDay(); // 0=일,1=월,...
+  // 달력 시작 = 1일에서 firstDow만큼 뒤로
+  const calStart = new Date(firstOfMonth);
+  calStart.setDate(1 - firstDow); // 일요일부터 시작
+
+  // 요일 헤더: 일-토
+  const DOW=['일','월','화','수','목','금','토'];
+  let cells='';
+  const cur = new Date(calStart);
+
+  for(let i=0;i<42;i++){
+    const ds=wpStr(cur);
+    const isOther = cur.getMonth()!==st.month;
+    const isToday = ds===todayStr;
+
+    const isInRange  = selMon && ds>=selMon && ds<=selSun;
+    const isRangeStart = ds===selMon;
+    const isRangeEnd   = ds===selSun;
+
+    let cls='wp-day';
+    if(isOther) cls+=' other';
+    if(isToday&&!isInRange) cls+=' today';
+    if(isRangeStart)      cls+=' week-start';
+    else if(isRangeEnd)   cls+=' week-end';
+    else if(isInRange)    cls+=' in-week';
+
+    const day=cur.getDate();
+    // 일요일(i%7===0) 빨간색
+    const isSunCol=(i%7===0);
+
+    cells+=`<div class="${cls}" data-ds="${ds}"
+      onmouseenter="wpHover('${wrapId}','${ds}')"
+      onmouseleave="wpHoverEnd('${wrapId}')"
+      onclick="wpSelect('${wrapId}','${ds}')">
+      <span class="wp-day-num${isSunCol?' wp-sun':''}">${day}</span>
+    </div>`;
+    cur.setDate(cur.getDate()+1);
+  }
+
+  const MONTHS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  drop.innerHTML=`
+    <div class="wp-nav">
+      <button class="wp-nav-btn" onclick="event.stopPropagation();wpNav('${wrapId}',-1)">‹</button>
+      <span class="wp-nav-title">${st.year}년 ${MONTHS[st.month]}</span>
+      <button class="wp-nav-btn" onclick="event.stopPropagation();wpNav('${wrapId}',1)">›</button>
+    </div>
+    <div class="wp-grid">
+      ${DOW.map((d,i)=>`<div class="wp-dow${i===0?' wp-sun':''}">${d}</div>`).join('')}
+      ${cells}
+    </div>`;
+}
+
+function wpHover(wrapId, ds){
+  const st=_wpState[wrapId];
+  const hoverMon=wpGetMon(ds);
+  const hoverSun=wpGetSun(hoverMon);
+  const drop=document.getElementById(wrapId+'-drop');
+  if(!drop) return;
+  drop.querySelectorAll('.wp-day').forEach(el=>{
+    const d=el.dataset.ds;
+    if(!d) return;
+    // 먼저 hover 관련 클래스 초기화
+    el.classList.remove('in-week','week-start','week-end','hovering');
+    if(d===hoverMon)               el.classList.add('week-start','hovering');
+    else if(d===hoverSun)          el.classList.add('week-end','hovering');
+    else if(d>hoverMon&&d<hoverSun) el.classList.add('in-week','hovering');
+  });
+}
+
+function wpHoverEnd(wrapId){
+  const st=_wpState[wrapId];
+  const drop=document.getElementById(wrapId+'-drop');
+  if(!drop) return;
+  const selMon=st.selectedMon;
+  const selSun=selMon?wpGetSun(selMon):null;
+  drop.querySelectorAll('.wp-day').forEach(el=>{
+    const d=el.dataset.ds;
+    if(!d) return;
+    el.classList.remove('in-week','week-start','week-end','hovering');
+    if(!selMon) return;
+    if(d===selMon)                el.classList.add('week-start');
+    else if(d===selSun)           el.classList.add('week-end');
+    else if(d>selMon&&d<selSun)   el.classList.add('in-week');
+  });
+}
+
+function wpSelect(wrapId, ds){
+  const mon=wpGetMon(ds);
+  const sun=wpGetSun(mon);
+  const st=_wpState[wrapId];
+  st.selectedMon=mon;
+  st.hoverMon=null;
+
+  // DOM 재생성 없이 클래스만 업데이트
+  const drop=document.getElementById(wrapId+'-drop');
+  if(drop){
+    drop.querySelectorAll('.wp-day').forEach(el=>{
+      const d=el.dataset.ds; if(!d) return;
+      el.classList.remove('in-week','week-start','week-end','hovering');
+      if(d===mon)            el.classList.add('week-start');
+      else if(d===sun)       el.classList.add('week-end');
+      else if(d>mon&&d<sun)  el.classList.add('in-week');
+    });
+  }
+  wpClose(wrapId);
+
+  const label=weekLabel(mon);
+  if(wrapId==='wp-write'){
+    document.getElementById('week-start').value=mon;
+    document.getElementById('week-label').textContent=label;
+    document.getElementById('wp-write-btn').textContent=label;
+  } else if(wrapId==='wp-chief'){
+    document.getElementById('chief-week').value=mon;
+    const hint=document.getElementById('chief-week-hint');
+    if(hint) hint.textContent=label;
+    document.getElementById('wp-chief-btn').textContent=label;
+  } else if(wrapId==='wp-edit'){
+    document.getElementById('edit-week').value=mon;
+    document.getElementById('edit-week-hint').textContent=label;
+    document.getElementById('wp-edit-btn').textContent=label;
+  } else {
+    // 범용: wp-{id}-btn, hidden input id = wrapId에서 'wp-' 제거 후 '-from'/'-to' 변환
+    // wp-talent-from → talent-from, wp-prayer-to → prayer-to 등
+    const hiddenId=wrapId.replace(/^wp-/,'');
+    const hiddenEl=document.getElementById(hiddenId);
+    const btnEl=document.getElementById(wrapId+'-btn');
+    if(hiddenEl) hiddenEl.value=mon;
+    if(btnEl) btnEl.textContent=label;
+  }
+}
+
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.wp-wrap')){
+    document.querySelectorAll('.wp-dropdown.open').forEach(el=>el.classList.remove('open'));
+    document.querySelectorAll('.wp-input.open').forEach(el=>el.classList.remove('open'));
+  }
+});
+
 
 /* ════════════════════════ TABS ════════════════════════════════ */
 function switchTab(t){
@@ -1144,7 +1433,7 @@ async function renderRecordsList(){
     <div class="rec-item">
       <div class="rec-item-body" onclick="viewRecord(${r.id})">
         <div class="rec-title" style="display:flex;align-items:center;gap:8px">
-          ${r.weekStart.replace(/-/g,'.')} ${r.className}
+          ${weekTitleDate(r.weekStart)} ${r.className}
           ${done?'<span class="status-badge done">완료</span>':''}
         </div>
         <div class="rec-meta">${weekLabel(r.weekStart)} · ${r.members.length}명</div>
@@ -1255,7 +1544,7 @@ function buildViewPanel(rec,opts={}){
     <div class="vp-topbar">
       <div>
         <div class="vp-title" style="display:flex;align-items:center;gap:8px">
-          ${rec.weekStart.replace(/-/g,'.')} ${rec.className}
+          ${weekTitleDate(rec.weekStart)} ${rec.className}
           ${rec.members.find((m,i)=>m.isTeacher||i===0)?.completed
             ?`<span class="status-badge done">완료</span>`:''}
         </div>
@@ -1273,7 +1562,7 @@ function buildViewPanel(rec,opts={}){
 async function printRecord(id){
   const arr=await getAllRecords();
   const rec=arr.find(r=>r.id===id); if(!rec) return;
-  openPrint(`${rec.weekStart} ${rec.className}`,buildViewPanel(rec,{noPrint:true}));
+  openPrint(`${weekTitleDate(rec.weekStart)} ${rec.className}`,buildViewPanel(rec,{noPrint:true}));
 }
 
 function openPrint(title,body){
@@ -1336,9 +1625,13 @@ async function openEdit(id){
         <input type="text" id="edit-class" value="${rec.className.replace(/"/g,'&quot;')}">
       </div>
       <div>
-        <span class="slabel">주간 (일요일)</span>
-        <input type="date" id="edit-week" value="${rec.weekStart}"
-          onchange="updateWeekLabel('edit-week','edit-week-hint')">
+        <span class="slabel">주간 선택</span>
+        <div class="wp-wrap" id="wp-edit">
+          <button type="button" class="wp-input" id="wp-edit-btn"
+            onclick="wpToggle('wp-edit')">${weekLabel(rec.weekStart)}</button>
+          <div class="wp-dropdown" id="wp-edit-drop"></div>
+        </div>
+        <input type="hidden" id="edit-week" value="${rec.weekStart}">
         <div id="edit-week-hint" class="week-hint">${weekLabel(rec.weekStart)}</div>
       </div>
     </div>
@@ -1367,6 +1660,12 @@ async function openEdit(id){
   window._editStudentCount=ec;
   document.getElementById('edit-overlay').classList.add('open');
   document.body.style.overflow='hidden';
+  // 주간 달력 위젯 초기화 (overlay가 열린 후)
+  setTimeout(()=>{
+    wpInit('wp-edit', rec.weekStart);
+    // wpSelect 연동: edit-week hidden input 업데이트
+    _wpEditRecWeekStart = rec.weekStart;
+  },0);
 }
 
 function editAddTeacher(){
@@ -1506,10 +1805,15 @@ async function printTeacherReport(){
 async function runTalentReport(){
   const from=document.getElementById('talent-from').value;
   const to=document.getElementById('talent-to').value;
-  if(!from||!to){alert('기간을 선택해주세요.');return;}
+  if(!from||!to){alert('시작/종료 날짜를 모두 선택해주세요.');return;}
   const cont=document.getElementById('talent-report');
   cont.innerHTML='<div class="empty-state"><span class="spinner dark"></span></div>';
-  const arr=(await getAllRecords()).filter(r=>r.weekStart>=from&&r.weekStart<=to);
+  const localFmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const arr=(await getAllRecords()).filter(r=>{
+    const sun=new Date(r.weekStart+'T00:00:00'); sun.setDate(sun.getDate()+6);
+    const sunStr=localFmt(sun);
+    return sunStr>=from && r.weekStart<=to;
+  });
   if(!arr.length){cont.innerHTML='<div class="empty-state">해당 기간 데이터가 없습니다.</div>';return;}
 
   const map={};
@@ -1599,7 +1903,7 @@ async function saveLesson(){
     btn.disabled=false; btn.innerHTML='💾 교안 저장';
     ['lsn-author','lsn-verse','lsn-keyword','lsn-image'].forEach(i=>document.getElementById(i).value='');
     ['lsn-summary','lsn-message','lsn-prayer'].forEach(i=>document.getElementById(i).value='');
-    document.getElementById('lsn-date').value=new Date().toISOString().split('T')[0];
+    document.getElementById('lsn-date').value=localDateStr(new Date());
     await renderLessons();
     document.getElementById('lesson-list').scrollIntoView({behavior:'smooth',block:'start'});
     alert('저장되었습니다!');
@@ -1720,8 +2024,14 @@ async function runPrayerReport(){
   const cont=document.getElementById('prayer-report');
   cont.innerHTML='<div class="empty-state"><span class="spinner dark"></span></div>';
   let arr=await getAllRecords();
-  if(from) arr=arr.filter(r=>r.weekStart>=from);
-  if(to)   arr=arr.filter(r=>r.weekStart<=to);
+  const localFmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  if(from||to) arr=arr.filter(r=>{
+    const sun=new Date(r.weekStart+'T00:00:00'); sun.setDate(sun.getDate()+6);
+    const sunStr=localFmt(sun);
+    if(from && sunStr<from) return false;
+    if(to && r.weekStart>to) return false;
+    return true;
+  });
   const results=[];
   arr.forEach(rec=>{
     rec.members.filter((m,i)=>!(m.isTeacher||i===0)).forEach(m=>{
@@ -1875,19 +2185,28 @@ async function saveJournalEdit(){
   await jnlSave(updated); closeJournalEdit(); renderJournals();
 }
 
+/* ════════════════════════ WEEK QUICK SELECT ═══════════════════ */
+
+
 /* ════════════════════════ INIT ════════════════════════════════ */
 (function(){
   const today=new Date();
   const mon=new Date(today);
   const _day=today.getDay();
   mon.setDate(today.getDate()+(_day===0?-6:1-_day));
-  const fmt=d=>d.toISOString().split('T')[0];
+  const fmt=d=>localDateStr(d);
   const s=fmt(mon);
 
   document.getElementById('week-start').value=s;
   document.getElementById('chief-week').value=s;
-  updateWeekLabel('week-start','week-label');
-  updateWeekLabel('chief-week','chief-week-hint');
+  // 주간 달력 위젯 초기화
+  wpInit('wp-write', s);
+  wpInit('wp-chief', s);
+  document.getElementById('wp-write-btn').textContent=weekLabel(s);
+  document.getElementById('wp-chief-btn').textContent=weekLabel(s);
+  document.getElementById('week-label').textContent=weekLabel(s);
+  const hint=document.getElementById('chief-week-hint');
+  if(hint) hint.textContent=weekLabel(s);
 
   buildMemberCard({role:'teacher',data:{name:''},
     container:document.getElementById('members-container'),removable:false});
@@ -1904,13 +2223,11 @@ async function saveJournalEdit(){
   document.getElementById('lsn-filter-to').value=fmt(today);
   document.getElementById('lsn-date').value=fmt(today);
 
-  // 기도제목 날짜 필터 초기값
+  // 달란트/기도제목 날짜 필터 초기값: 3개월 전 ~ 오늘
+  document.getElementById('talent-from').value=fmt(jnlFrom);
+  document.getElementById('talent-to').value=fmt(today);
   document.getElementById('prayer-from').value=fmt(jnlFrom);
   document.getElementById('prayer-to').value=fmt(today);
-
-  const ago=new Date(today); ago.setDate(today.getDate()-21);
-  document.getElementById('talent-from').value=fmt(ago);
-  document.getElementById('talent-to').value=fmt(today);
 })();
 </script>
 </body>
